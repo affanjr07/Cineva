@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
+final RouteObserver<ModalRoute<Object?>> cinevaRouteObserver =
+    RouteObserver<ModalRoute<Object?>>();
+
 Route<T> cinevaPageRoute<T>(Widget page) {
   return PageRouteBuilder<T>(
     pageBuilder: (_, _, _) => page,

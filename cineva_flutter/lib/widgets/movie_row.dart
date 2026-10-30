@@ -7,10 +7,16 @@ import 'movie_card.dart';
 const _rowSize = 8;
 
 class MovieRow extends StatefulWidget {
-  const MovieRow({super.key, required this.title, required this.data});
+  const MovieRow({
+    super.key,
+    required this.title,
+    required this.data,
+    this.topGap,
+  });
 
   final String title;
   final List<Movie> data;
+  final double? topGap;
 
   @override
   State<MovieRow> createState() => _MovieRowState();
@@ -26,7 +32,10 @@ class _MovieRowState extends State<MovieRow> {
     final hasMore = _visibleCount < widget.data.length;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.xxl),
+      margin: EdgeInsets.only(
+        top: widget.topGap ?? 0,
+        bottom: AppSpacing.xxl,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

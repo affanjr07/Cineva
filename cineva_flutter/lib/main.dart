@@ -6,14 +6,17 @@ import 'screens/explore_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/my_list_screen.dart';
 import 'screens/search_screen.dart';
+import 'services/auth_service.dart';
 import 'stores/bookmark_store.dart';
 import 'stores/chat_store.dart';
 import 'stores/search_history_store.dart';
 import 'stores/watch_history_store.dart';
 import 'theme/app_theme.dart';
+import 'utils/routes.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AuthService.instance.initialize();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
@@ -32,6 +35,7 @@ class CinevaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Cineva',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [cinevaRouteObserver],
       theme: buildAppTheme(),
       home: const CinevaHome(),
     );
@@ -48,14 +52,6 @@ class CinevaHome extends StatefulWidget {
 class _CinevaHomeState extends State<CinevaHome> with TickerProviderStateMixin {
   int _index = 0;
   late final List<AnimationController> _dotControllers;
-
-  static const _tabs = [
-    HomeScreen(),
-    ExploreScreen(),
-    SearchScreen(),
-    AiScreen(),
-    MyListScreen(),
-  ];
 
   @override
   void initState() {
@@ -95,7 +91,13 @@ class _CinevaHomeState extends State<CinevaHome> with TickerProviderStateMixin {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: _tabs,
+        children: [
+          HomeScreen(isActive: _index == 0),
+          const ExploreScreen(),
+          const SearchScreen(),
+          const AiScreen(),
+          const MyListScreen(),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(

@@ -24,9 +24,18 @@ class HomeSlide {
 }
 
 class BannerCarousel extends StatefulWidget {
-  const BannerCarousel({super.key, required this.slides});
+  const BannerCarousel({
+    super.key,
+    required this.slides,
+    this.isVisible = true,
+  });
 
   final List<HomeSlide> slides;
+  final bool isVisible;
+
+  static double heightFor(BuildContext context) {
+    return MediaQuery.of(context).size.width * 0.85;
+  }
 
   @override
   State<BannerCarousel> createState() => _BannerCarouselState();
@@ -46,7 +55,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
   Widget build(BuildContext context) {
     if (widget.slides.isEmpty) return const SizedBox.shrink();
     return SizedBox(
-      height: MediaQuery.of(context).size.width * 0.85,
+      height: BannerCarousel.heightFor(context),
       child: Stack(
         children: [
           PageView.builder(
@@ -55,7 +64,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
             onPageChanged: (i) => setState(() => _activeIndex = i),
             itemBuilder: (_, i) => SlideItem(
               slide: widget.slides[i],
-              active: i == _activeIndex,
+              active: i == _activeIndex && widget.isVisible,
             ),
           ),
           if (widget.slides.length > 1)
