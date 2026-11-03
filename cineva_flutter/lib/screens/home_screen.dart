@@ -6,6 +6,7 @@ import '../models/models.dart';
 import '../theme/app_theme.dart';
 import '../utils/routes.dart';
 import '../widgets/banner_carousel.dart';
+import '../widgets/continue_watching_row.dart';
 import '../widgets/movie_recommendations.dart';
 import '../widgets/movie_row.dart';
 import '../widgets/states.dart';
@@ -166,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     isVisible:
                         widget.isActive && _bannerInView && !_covered,
                   ),
+                  const ContinueWatchingRow(),
                   MovieRow(
                     title: 'Trending',
                     data: _trending,

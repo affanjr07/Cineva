@@ -40,6 +40,7 @@ dependencies:
   webview_flutter: ^4.10.0
   shared_preferences: ^2.3.3
   url_launcher: ^6.3.2
+  supabase_flutter: ^2.8.3
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +52,9 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+dependency_overrides:
+  path_provider_foundation: 2.4.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

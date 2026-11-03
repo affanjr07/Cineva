@@ -108,4 +108,10 @@ class WatchHistoryStore extends ChangeNotifier {
     notifyListeners();
     await _persist();
   }
+
+  Future<void> clearAll() async {
+    _items.clear();
+    notifyListeners();
+    await _persist();
+  }
 }
