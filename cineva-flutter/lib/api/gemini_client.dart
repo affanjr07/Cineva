@@ -20,8 +20,11 @@ class ChatMessageData {
 class GeminiClient {
   GeminiClient();
 
-  static const _model = String.fromEnvironment('GEMINI_MODEL');
-  static const _apiKey = String.fromEnvironment('GEMINI_API_KEY');
+  static const _groqApiKey = String.fromEnvironment('GROQ_API_KEY');
+  static const _groqModel = String.fromEnvironment('GROQ_MODEL');
+
+  static const _geminiModel = String.fromEnvironment('GEMINI_MODEL');
+  static const _geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
 
   static final _movieKeywords = RegExp(
     r'(film|movie|series|drama|sinema|nonton|tonton|watch|episode|season|'
@@ -48,10 +51,8 @@ class GeminiClient {
 
   static String get offTopicReply => _offTopicReply;
 
-  static String get _modelName =>
-      _model.isEmpty ? 'gemini-3.5-flash-lite' : _model;
-
-  static String get _key => _apiKey;
+  static bool get isConfigured =>
+      _groqApiKey.isNotEmpty || _geminiApiKey.isNotEmpty;
 
   static const _systemPrompt =
       'Kamu adalah Cineva AI, asisten film cerdas di aplikasi Cineva — aplikasi katalog film dan series Indonesia.\n'
@@ -69,8 +70,76 @@ class GeminiClient {
       '- Max 5 rekomendasi per respons. Setiap rekomendasi: judul + alasan singkat dalam 1 baris.\n'
       '- Jawab ringkas dan cepat (max 150 kata).';
 
-  static Map<String, dynamic> _buildPayload(List<ChatMessageData> messages) {
-    return {
+  static Future<String> sendChatMessage(List<ChatMessageData> messages) async {
+    if (_groqApiKey.isNotEmpty) {
+      return _sendGroqChat(messages);
+    }
+
+    if (_geminiApiKey.isNotEmpty) {
+      return _sendGeminiChat(messages);
+    }
+
+    throw Exception(
+      'AI API key not configured. Add GROQ_API_KEY (or GEMINI_API_KEY) to .env',
+    );
+  }
+
+  static Future<String> _sendGroqChat(List<ChatMessageData> messages) async {
+    const url = 'https://api.groq.com/openai/v1/chat/completions';
+    final model =
+        _groqModel.isNotEmpty ? _groqModel : 'openai/gpt-oss-120b';
+
+    final groqMessages = <Map<String, String>>[
+      {'role': 'system', 'content': _systemPrompt},
+      ...messages.map(
+        (m) => {
+          'role': m.role == 'user' ? 'user' : 'assistant',
+          'content': m.text,
+        },
+      ),
+    ];
+
+    final res = await http
+        .post(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': 'Bearer $_groqApiKey',
+          },
+          body: jsonEncode({
+            'model': model,
+            'messages': groqMessages,
+            'temperature': 0.7,
+            'max_tokens': 600,
+          }),
+        )
+        .timeout(const Duration(seconds: 45));
+
+    if (res.statusCode != 200) {
+      throw Exception('Groq AI request failed (${res.statusCode}): ${res.body}');
+    }
+
+    final data = jsonDecode(utf8.decode(res.bodyBytes));
+    final choices = data['choices'] as List?;
+    if (choices == null || choices.isEmpty) {
+      throw Exception('Groq returned empty response.');
+    }
+
+    final content = choices[0]?['message']?['content'] as String? ?? '';
+    if (content.trim().isEmpty) {
+      throw Exception('AI returned empty response.');
+    }
+
+    return _stripMarkdown(content);
+  }
+
+  static Future<String> _sendGeminiChat(List<ChatMessageData> messages) async {
+    final model =
+        _geminiModel.isEmpty ? 'gemini-2.5-flash' : _geminiModel;
+    final url =
+        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_geminiApiKey';
+
+    final payload = {
       'contents': messages
           .map(
             (m) => {
@@ -92,36 +161,25 @@ class GeminiClient {
         'maxOutputTokens': 600,
       },
     };
-  }
-
-  static Future<String> sendChatMessage(List<ChatMessageData> messages) async {
-    if (_key.isEmpty) {
-      throw Exception(
-        'Gemini API key not configured. Add --dart-define=GEMINI_API_KEY=...',
-      );
-    }
-
-    final url =
-        'https://generativelanguage.googleapis.com/v1beta/models/$_modelName:generateContent?key=$_key';
 
     final res = await http
         .post(
           Uri.parse(url),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(_buildPayload(messages)),
+          body: jsonEncode(payload),
         )
-        .timeout(const Duration(seconds: 90));
+        .timeout(const Duration(seconds: 45));
 
     if (res.statusCode != 200) {
-      throw Exception('AI request failed: ${res.statusCode}');
+      throw Exception('Gemini AI request failed: ${res.statusCode}');
     }
 
-    final data = jsonDecode(res.body);
+    final data = jsonDecode(utf8.decode(res.bodyBytes));
     final text =
         data['candidates']?[0]?['content']?['parts']?[0]?['text'] as String?;
 
     if (text == null || text.isEmpty) {
-      throw Exception('AI returned empty response.');
+      throw Exception('Gemini AI returned empty response.');
     }
 
     return _stripMarkdown(text);
@@ -169,3 +227,5 @@ class GeminiClient {
         .toList();
   }
 }
+
+typedef AiClient = GeminiClient;

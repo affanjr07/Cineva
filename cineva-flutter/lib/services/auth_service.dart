@@ -45,7 +45,8 @@ class AuthService {
       return;
     }
 
-    final uri = Uri.tryParse(SupabaseConfig.url.trim());
+    final cleanUrl = SupabaseConfig.cleanUrl;
+    final uri = Uri.tryParse(cleanUrl);
     if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
       _status = AuthStatus.failed;
       _configurationIssue =
@@ -55,7 +56,7 @@ class AuthService {
 
     try {
       await Supabase.initialize(
-        url: SupabaseConfig.url.trim(),
+        url: cleanUrl,
         publishableKey: SupabaseConfig.clientKey,
       );
       _client = Supabase.instance.client;
