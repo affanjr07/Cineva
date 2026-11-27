@@ -21,7 +21,7 @@ Login, register, dan sesi pengguna memakai Supabase Auth. Password tidak pernah 
 3. Salin `.env.example` menjadi `.env`, lalu isi:
    - `SUPABASE_URL` — Project URL
    - `SUPABASE_PUBLISHABLE_KEY` — publishable key (atau `SUPABASE_ANON_KEY` untuk project lama)
-   - `GROQ_API_KEY` — API key Groq untuk tab Cineva AI (opsional fallback: `GEMINI_API_KEY`)
+   - `GROQ_API_KEY` — API key Groq untuk tab Cineva AI (dan rekomendasi film)
    - `GROQ_MODEL` — model Groq (default: `openai/gpt-oss-120b`)
 4. Untuk login langsung setelah register, buka **Authentication → Providers → Email** dan nonaktifkan **Confirm email**. Jika fitur konfirmasi email tetap aktif, pengguna harus membuka link konfirmasi dari inbox sebelum bisa login.
 

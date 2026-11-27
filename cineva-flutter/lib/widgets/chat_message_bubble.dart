@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../api/gemini_client.dart';
+import '../api/groq_client.dart';
 import '../theme/app_theme.dart';
 
 class ChatMessageBubble extends StatelessWidget {
