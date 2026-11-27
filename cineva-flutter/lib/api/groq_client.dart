@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+/// Single message turn exchanged with Cineva AI.
 class ChatMessageData {
   final String role;
   final String text;
@@ -17,14 +18,15 @@ class ChatMessageData {
       );
 }
 
-class GeminiClient {
-  GeminiClient();
+/// Groq-only AI client used for Cineva AI chat and recommendations.
+class GroqClient {
+  GroqClient._();
 
   static const _groqApiKey = String.fromEnvironment('GROQ_API_KEY');
   static const _groqModel = String.fromEnvironment('GROQ_MODEL');
 
-  static const _geminiModel = String.fromEnvironment('GEMINI_MODEL');
-  static const _geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
+  static const _endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+  static const _defaultModel = 'openai/gpt-oss-120b';
 
   static final _movieKeywords = RegExp(
     r'(film|movie|series|drama|sinema|nonton|tonton|watch|episode|season|'
@@ -51,8 +53,7 @@ class GeminiClient {
 
   static String get offTopicReply => _offTopicReply;
 
-  static bool get isConfigured =>
-      _groqApiKey.isNotEmpty || _geminiApiKey.isNotEmpty;
+  static bool get isConfigured => _groqApiKey.trim().isNotEmpty;
 
   static const _systemPrompt =
       'Kamu adalah Cineva AI, asisten film cerdas di aplikasi Cineva — aplikasi katalog film dan series Indonesia.\n'
@@ -71,23 +72,12 @@ class GeminiClient {
       '- Jawab ringkas dan cepat (max 150 kata).';
 
   static Future<String> sendChatMessage(List<ChatMessageData> messages) async {
-    if (_groqApiKey.isNotEmpty) {
-      return _sendGroqChat(messages);
+    final apiKey = _groqApiKey.trim();
+    if (apiKey.isEmpty) {
+      throw Exception('Groq AI API key not configured. Add GROQ_API_KEY to .env');
     }
 
-    if (_geminiApiKey.isNotEmpty) {
-      return _sendGeminiChat(messages);
-    }
-
-    throw Exception(
-      'AI API key not configured. Add GROQ_API_KEY (or GEMINI_API_KEY) to .env',
-    );
-  }
-
-  static Future<String> _sendGroqChat(List<ChatMessageData> messages) async {
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-    final model =
-        _groqModel.isNotEmpty ? _groqModel : 'openai/gpt-oss-120b';
+    final model = _groqModel.trim().isNotEmpty ? _groqModel.trim() : _defaultModel;
 
     final groqMessages = <Map<String, String>>[
       {'role': 'system', 'content': _systemPrompt},
@@ -101,16 +91,16 @@ class GeminiClient {
 
     final res = await http
         .post(
-          Uri.parse(url),
+          Uri.parse(_endpoint),
           headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            'Authorization': 'Bearer $_groqApiKey',
+            'Authorization': 'Bearer $apiKey',
           },
           body: jsonEncode({
             'model': model,
             'messages': groqMessages,
             'temperature': 0.7,
-            'max_tokens': 600,
+            'max_tokens': 2048,
           }),
         )
         .timeout(const Duration(seconds: 45));
@@ -127,62 +117,10 @@ class GeminiClient {
 
     final content = choices[0]?['message']?['content'] as String? ?? '';
     if (content.trim().isEmpty) {
-      throw Exception('AI returned empty response.');
+      throw Exception('Groq returned empty response.');
     }
 
     return _stripMarkdown(content);
-  }
-
-  static Future<String> _sendGeminiChat(List<ChatMessageData> messages) async {
-    final model =
-        _geminiModel.isEmpty ? 'gemini-2.5-flash' : _geminiModel;
-    final url =
-        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_geminiApiKey';
-
-    final payload = {
-      'contents': messages
-          .map(
-            (m) => {
-              'role': m.role == 'user' ? 'user' : 'model',
-              'parts': [
-                {'text': m.text},
-              ],
-            },
-          )
-          .toList(),
-      'systemInstruction': {
-        'parts': [
-          {'text': _systemPrompt},
-        ],
-      },
-      'generationConfig': {
-        'temperature': 0.8,
-        'topP': 0.95,
-        'maxOutputTokens': 600,
-      },
-    };
-
-    final res = await http
-        .post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(payload),
-        )
-        .timeout(const Duration(seconds: 45));
-
-    if (res.statusCode != 200) {
-      throw Exception('Gemini AI request failed: ${res.statusCode}');
-    }
-
-    final data = jsonDecode(utf8.decode(res.bodyBytes));
-    final text =
-        data['candidates']?[0]?['content']?['parts']?[0]?['text'] as String?;
-
-    if (text == null || text.isEmpty) {
-      throw Exception('Gemini AI returned empty response.');
-    }
-
-    return _stripMarkdown(text);
   }
 
   static String _stripMarkdown(String text) {
@@ -228,4 +166,4 @@ class GeminiClient {
   }
 }
 
-typedef AiClient = GeminiClient;
+typedef AiClient = GroqClient;

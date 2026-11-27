@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../api/gemini_client.dart';
+import '../api/groq_client.dart';
 
 class ChatConversation {
   final String id;

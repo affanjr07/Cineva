@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
-import '../api/gemini_client.dart';
+import '../api/groq_client.dart';
 import '../models/models.dart';
 import '../screens/movie_detail_screen.dart';
 import '../screens/series_detail_screen.dart';
@@ -64,7 +64,7 @@ class _MovieRecommendationsState extends State<MovieRecommendations> {
       'Rekomendasikan film yang sejenis dan sesuai selera.',
     ].join('. ');
 
-    final titles = await GeminiClient.getRecommendedMovieTitles(
+    final titles = await GroqClient.getRecommendedMovieTitles(
       context.isEmpty ? 'pengguna baru, belum ada riwayat' : context,
     );
 

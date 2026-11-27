@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../api/gemini_client.dart';
+import '../api/groq_client.dart';
 import '../stores/chat_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/chat_input.dart';
@@ -71,12 +71,12 @@ class _AiScreenState extends State<AiScreen> {
     );
     setState(() => _loading = true);
 
-    if (!GeminiClient.isMovieRelatedQuery(text)) {
+    if (!GroqClient.isMovieRelatedQuery(text)) {
       await Future<void>.delayed(const Duration(milliseconds: 400));
       if (mounted) setState(() => _loading = false);
       await ChatStore.instance.addMessage(
         convId,
-        ChatMessageData(role: 'model', text: GeminiClient.offTopicReply),
+        ChatMessageData(role: 'model', text: GroqClient.offTopicReply),
       );
       return;
     }
@@ -87,7 +87,7 @@ class _AiScreenState extends State<AiScreen> {
     final history = (conv?.messages ?? []).map((m) => m).toList(growable: true);
 
     try {
-      final reply = await GeminiClient.sendChatMessage(history);
+      final reply = await GroqClient.sendChatMessage(history);
       await ChatStore.instance.addMessage(
         convId,
         ChatMessageData(role: 'model', text: reply),
